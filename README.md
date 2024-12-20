@@ -2,7 +2,7 @@
 
 Terra Tracker Sensor is the sensor part of the TTT (Tiropp's Terra Tracker) system. It will make the environment measurements and send the information to the data collector API. 
 
-The sensor is based on a Raspberry Pico W device using Zephyr RTOS.
+The sensor is based on a [Raspberry Pico W](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#picow-technical-specification) device using [Zephyr](https://www.zephyrproject.org) RTOS.
 
 
 ## Building the Code
