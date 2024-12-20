@@ -1,2 +1,5 @@
 # emacs
 *~
+
+# std build dir
+_build/
