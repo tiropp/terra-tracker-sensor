@@ -91,7 +91,7 @@ std::optional<Data::SensorData> Sensor::measure() const {
 
     if ((*status & DHT20_STATUS_MASK) != DHT20_STATUS_MASK) {
         TTT_LOG_INFO << "Sensor needs to be initialized";
-        init_device();
+        if (!init_device()) return std::nullopts;
     }
 
     std::this_thread::sleep_for(10ms);
