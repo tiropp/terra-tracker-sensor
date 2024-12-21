@@ -5,9 +5,12 @@
 
 namespace TTT::Sensor::Adapters {
 
+HttpClient::HttpClient(size_t recv_buf_size) : m_recv_buf_size(recv_buf_size) {}
+
 bool HttpClient::open(const std::string& address, uint16_t port) {
     m_address = address;
     m_port = port;
+
     return true;
 }
 
@@ -50,8 +53,7 @@ std::optional<Data::HttpResponse> HttpClient::request(
 
     // Prepare response structure
     Data::HttpResponse rsp;
-    const auto data_size = 512;
-    rsp.data.resize(data_size);
+    rsp.data.resize(m_rev_buf_size);
 
     // Make GET request
     struct http_request req = {0};

@@ -11,6 +11,9 @@ namespace TTT::Sensor::Adapters {
 
 class HttpClient : public Ports::HttpClient {
   public:
+    HttpClient(size_t recv_buf_size = 512);
+
+  public:
     virtual bool open(const std::string& address, uint16_t port);
     virtual bool close();
 
@@ -33,6 +36,7 @@ class HttpClient : public Ports::HttpClient {
                              enum http_final_call final_data, void* user_data);
 
   private:
+    size_t m_recv_buf_size;
     std::string m_address;
     uint16_t m_port;
     Socket m_socket;
