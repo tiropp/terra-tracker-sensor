@@ -5,9 +5,12 @@
 
 namespace TTT::Sensor::Adapters {
 
+HttpClient::HttpClient(size_t recv_buf_size) : m_recv_buf_size(recv_buf_size) {}
+
 bool HttpClient::open(const std::string& address, uint16_t port) {
     m_address = address;
     m_port = port;
+
     return true;
 }
 
@@ -50,8 +53,7 @@ std::optional<Data::HttpResponse> HttpClient::request(
 
     // Prepare response structure
     Data::HttpResponse rsp;
-    const auto data_size = 512;
-    rsp.data.resize(data_size);
+    rsp.data.resize(m_recv_buf_size);
 
     // Make GET request
     struct http_request req = {0};
@@ -64,7 +66,7 @@ std::optional<Data::HttpResponse> HttpClient::request(
     req.optional_headers = hdrs_.data();
     req.response = &HttpClient::rsp_callback;
     req.recv_buf = &rsp.data[0];
-    req.recv_buf_len = data_size;
+    req.recv_buf_len = rsp.data.size();
 
     if (http_client_req(m_socket.native(), &req, timeout.count(),
                         reinterpret_cast<void*>(&rsp)) == 0)
