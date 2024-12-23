@@ -8,13 +8,11 @@
 #define I2C_CONTROLLER DT_ALIAS(i2c_controller)
 static const struct device* i2c_controller = DEVICE_DT_GET(I2C_CONTROLLER);
 
-#define DHT20_I2C_ADDR 0x38
-#define DHT20_STATUS_MASK 0x18
-#define DHT20_RESET_REGISTERS \
-    { 0x1B, 0x1C, 0x1D }
-#define DHT20_RESET_REG_MASK 0xB0
-#define DHT20_TRIGGER_MEASUREMENT \
-    { 0xAC, 0x33, 0x00 }
+static const uint8_t DHT20_I2C_ADDR = 0x38;
+static const uint8_t DHT20_STATUS_MASK = 0x18;
+static const uint8_t DHT20_RESET_REGISTERS[] = {0x1B, 0x1C, 0x1D};
+static const uint8_t DHT20_RESET_REG_MASK = 0xB0;
+static const uint8_t DHT20_TRIGGER_MEASUREMENT[] = {0xAC, 0x33, 0x00};
 
 namespace TTT::Sensor::Adapters {
 
@@ -91,7 +89,7 @@ std::optional<Data::SensorData> Sensor::measure() const {
 
     if ((*status & DHT20_STATUS_MASK) != DHT20_STATUS_MASK) {
         TTT_LOG_INFO << "Sensor needs to be initialized";
-        if (!init_device()) return std::nullopts;
+        if (!init_device()) return std::nullopt;
     }
 
     std::this_thread::sleep_for(10ms);
