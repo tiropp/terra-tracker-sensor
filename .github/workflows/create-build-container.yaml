@@ -6,13 +6,13 @@ on:
       - main
     paths:
       - container/build.Dockerfile
-      - '.github/workflows/${{ github.workflow }}.yml'
+      - '.github/workflows/${{ github.workflow }}.yaml'
   pull_request:
     branches:
       - main
     paths:
       - container/build.Dockerfile
-      - '.github/workflows/${{ github.workflow }}.yml'
+      - '.github/workflows/${{ github.workflow }}.yaml'
 
 jobs:
   build-and-push:
