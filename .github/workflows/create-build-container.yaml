@@ -36,4 +36,4 @@ jobs:
         with:
           push: ${{ github.ref == 'refs/heads/main' }}
           file: container/build.Dockerfile
-          tags: ghcr.io/${{ github.repository }}/terra-tracker-sensor-zephyr:latest
+          tags: ghcr.io/${{ github.repository }}/zephyr:latest
