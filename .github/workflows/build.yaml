@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    paths-ignore:
+      - container/build.Dockerfile
+      - .github/workflows/create-build-container.yaml
+  pull_request:
+    paths-ignore:
+      - container/build.Dockerfile
+      - .github/workflows/create-build-container.yaml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/${{ github.repository }}/zephyr:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: CMake configure
+        run: |
+          cmake -B _build/release -G Ninja -D CMAKE_BUILD_TYPE=Release -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=release
+          cmake -B _build/release -G Ninja -D CMAKE_BUILD_TYPE=Release -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=release
+
+      - name: Build
+        run: |
+          cmake --build _build/release --config Release
