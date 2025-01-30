@@ -20,14 +20,34 @@ Run build container with
 docker run -it --rm --mount type=bind,src=$PWD,dst=/host zephyr
 ```
 
+#### Debug Build
 Inside the container, make the build with following command for Raspberry Pi Pico W board
 ```
 cd /host
-cmake -B _build -G Ninja -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=debug
-cmake --build _build
+cmake -B _build/debug -G Ninja -D CMAKE_BUILD_TYPE=Debug -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=debug
+cmake -B _build/debug -G Ninja -D CMAKE_BUILD_TYPE=Debug -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=debug
+cmake --build _build/debug --config Debug
 ```
 
-The device image can be found at `_build/zephyr/zephyr.uf2`.
+**Note**
+For whatever reason the cmake configuration step needs to run twice, otherwise the building fill fail.
+
+The device image can be found at `_build/debug/build/zephyr/zephyr.uf2`.
+
+#### Release Build
+Inside the container, make the build with following command for Raspberry Pi Pico W board
+```
+cd /host
+cmake -B _build/release -G Ninja -D CMAKE_BUILD_TYPE=Release -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=release
+cmake -B _build/release -G Ninja -D CMAKE_BUILD_TYPE=Release -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=release
+cmake --build _build/release --config Release
+```
+
+**Note**
+For whatever reason the cmake configuration step needs to run twice, otherwise the building fill fail.
+
+The device image can be found at `_build/release/build/zephyr/zephyr.uf2`.
+
 
 ### Copy Image to Device
 1. Boot the device as USB mass storage by pressing the button on the Pico device before plugging in the USB connector. 
