@@ -36,4 +36,4 @@ jobs:
         with:
           push: true
           file: container/build.Dockerfile
-          tags: ${{ secrets.DOCKER_USERNAME }}/terra-tracker-sensor-zephyr:latest
+          tags: ghcr.io/${{ github.repository }}/terra-tracker-sensor-zephyr:latest
