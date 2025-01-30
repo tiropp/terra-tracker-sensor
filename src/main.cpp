@@ -77,7 +77,8 @@ int main() {
     }
     */
 
-    TTT::Sensor::Adapters::Sensor sensor;
+    TTT::Sensor::Adapters::Sensor sensor(
+        std::make_unique<TTT::Sensor::Adapters::SensorAccessorImpl>());
     while (true) {
         TTT_LOG_INFO << "Get sensor data ... ";
         auto m = sensor.measure();

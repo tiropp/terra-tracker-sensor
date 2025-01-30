@@ -16,92 +16,23 @@ static const uint8_t DHT20_TRIGGER_MEASUREMENT[] = {0xAC, 0x33, 0x00};
 
 namespace TTT::Sensor::Adapters {
 
-Sensor::Sensor() {
-    // auto dev = device_get_binding("i2c@40044000");
-    // if (!dev) {
-    //     TTT_LOG_ERROR << "Failed to get I2C device";
-    //     return;
-    // }
-    // m_dt.bus = dev;
+SensorAccessorImpl::SensorAccessorImpl() {
     TTT_LOG_INFO << "I2C device: " << i2c_controller->name;
 
     m_dt.bus = i2c_controller;
     m_dt.addr = DHT20_I2C_ADDR;
 }
 
-std::optional<Data::SensorData> Sensor::measure() const {
-    using namespace std::chrono_literals;
-
-    // i2c_dt_spec dt = I2C_DT_SPEC_INST_GET(0);
-
-    // auto device = device_get_binding("I2C_0");
-    // if (!device) {
-    //     TTT_LOG_ERROR << "Cannot find device";
-    //     return std::nullopt;
-    // }
-
-    // Check I2C bus is ready
+bool SensorAccessorImpl::is_bus_ready() const {
     if (!i2c_is_ready_dt(&m_dt)) {
         TTT_LOG_ERROR << "I2C isn't ready";
-        return std::nullopt;
+        return false;
     }
 
-    /*
-    // Request status
-    uint8_t status_req[] = {0x71};
-    uint8_t status_rsp[] = {0x00};
-
-    struct i2c_msg msgs[2];
-    msgs[0].buf = status_req;
-    msgs[0].len = sizeof(status_req);
-    msgs[0].flags = I2C_MSG_RESTART | I2C_MSG_WRITE;
-    msgs[1].buf = status_rsp;
-    msgs[1].len = sizeof(status_rsp);
-    msgs[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
-
-    if (!i2c_transfer(i2c_controller, msgs, ARRAY_SIZE(msgs), DHT20_I2C_ADDR)) {
-        TTT_LOG_ERROR << "Requesting status from sensor failed (" << errno
-                      << ")";
-        return std::nullopt;
-    } else {
-        TTT_LOG_DEBUG << "Sensor status: [" << std::showbase << std::hex
-                      << static_cast<int>(status_rsp[0]) << "]";
-        return std::nullopt;
-    }
-    */
-
-    // uint8_t status_req[] = {0x71};
-    // if (!i2c_write_dt(&dt, status_req, sizeof(status_req))) {
-    //     TTT_LOG_ERROR << "Writing status request failed";
-    //     return std::nullopt;
-    // }
-
-    // uint8_t status_rsp[] = {0x00};
-    // if (!i2c_read_dt(&dt, status_rsp, sizeof(status_rsp))) {
-    //     TTT_LOG_ERROR << "Reading status response failed";
-    //     return std::nullopt;
-    // }
-
-    auto status = get_status();
-    if (!status) return std::nullopt;
-    TTT_LOG_DEBUG << "Sensor status: [" << std::showbase << std::hex
-                  << static_cast<int>(*status) << "]";
-
-    if ((*status & DHT20_STATUS_MASK) != DHT20_STATUS_MASK) {
-        TTT_LOG_INFO << "Sensor needs to be initialized";
-        if (!init_device()) return std::nullopt;
-    }
-
-    std::this_thread::sleep_for(10ms);
-    if (!trigger_measurement()) {
-        TTT_LOG_ERROR << "Triggering measurement failed";
-        return std::nullopt;
-    }
-
-    return std::nullopt;
+    return true;
 }
 
-std::optional<uint8_t> Sensor::get_status() const {
+std::optional<uint8_t> SensorAccessorImpl::get_status() const {
     uint8_t status[] = {0x00};
     if (i2c_read_dt(&m_dt, status, sizeof(status))) {
         TTT_LOG_ERROR << "Failed to get status";
@@ -111,7 +42,7 @@ std::optional<uint8_t> Sensor::get_status() const {
     return status[0];
 }
 
-bool Sensor::init_device() const {
+bool SensorAccessorImpl::init_device() const {
     using namespace std::chrono_literals;
     for (auto reg : DHT20_RESET_REGISTERS) {
         if (!reset_register(reg)) {
@@ -124,7 +55,7 @@ bool Sensor::init_device() const {
     return true;
 }
 
-bool Sensor::reset_register(uint8_t reg) const {
+bool SensorAccessorImpl::reset_register(uint8_t reg) const {
     using namespace std::chrono_literals;
 
     uint8_t data1[] = {reg, 0x00, 0x00};
@@ -158,9 +89,7 @@ bool Sensor::reset_register(uint8_t reg) const {
     return true;
 }
 
-bool Sensor::trigger_measurement() const {
-    using namespace std::chrono_literals;
-
+bool SensorAccessorImpl::trigger_measurement() const {
     // Trigger measurement
     if (i2c_write_dt(&m_dt, DHT20_TRIGGER_MEASUREMENT,
                      sizeof(DHT20_TRIGGER_MEASUREMENT))) {
@@ -168,9 +97,70 @@ bool Sensor::trigger_measurement() const {
         return false;
     }
 
-    std::this_thread::sleep_for(80ms);
-
     return false;
 }
 
+Sensor::Sensor(std::unique_ptr<SensorAccessor> accessor)
+    : m_state(std::make_unique<details::SensorStateUninitialized>(
+          this, std::move(accessor))) {}
+
+std::optional<Data::SensorData> Sensor::measure() const {
+    return m_state->measure();
+}
+
+void Sensor::change_state(std::unique_ptr<details::SensorState> state) {
+    m_state = std::move(state);
+}
+
+namespace details {
+
+SensorStateUninitialized::SensorStateUninitialized(
+    Sensor* parent, std::unique_ptr<SensorAccessor> accessor)
+    : m_parent(parent), m_accessor(std::move(accessor)) {}
+
+std::optional<Data::SensorData> SensorStateUninitialized::measure() const {
+    using namespace std::chrono_literals;
+
+    // Check I2C bus is ready
+    if (!m_accessor->is_bus_ready()) return std::nullopt;
+
+    // Make sure status is indicating proper working state
+    auto status = m_accessor->get_status();
+    if (!status) return std::nullopt;
+    TTT_LOG_DEBUG << "Sensor status: [" << std::showbase << std::hex
+                  << static_cast<int>(*status) << "]";
+
+    if ((*status & DHT20_STATUS_MASK) != DHT20_STATUS_MASK) {
+        TTT_LOG_INFO << "Sensor needs to be initialized";
+        if (!m_accessor->init_device()) return std::nullopt;
+    }
+
+    // Sensor is in proper working state hence, one can change state to
+    // "Initialized"
+    m_parent->change_state(std::make_unique<SensorStateInitialized>(
+        m_parent, std::move(m_accessor)));
+
+    std::this_thread::sleep_for(10ms);
+    return m_parent->measure();
+}
+
+SensorStateInitialized::SensorStateInitialized(
+    Sensor* parent, std::unique_ptr<SensorAccessor> accessor)
+    : m_parent(parent), m_accessor(std::move(accessor)) {}
+
+std::optional<Data::SensorData> SensorStateInitialized::measure() const {
+    using namespace std::chrono_literals;
+    TTT_LOG_DEBUG << "Start measurement";
+
+    if (!m_accessor->trigger_measurement()) {
+        TTT_LOG_ERROR << "Triggering measurement failed";
+        return std::nullopt;
+    }
+
+    std::this_thread::sleep_for(80ms);
+
+    return std::nullopt;
+}
+
+}  // End namespace details
 }  // End namespace TTT::Sensor::Adapters
