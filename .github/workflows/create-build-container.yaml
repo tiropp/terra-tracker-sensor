@@ -2,14 +2,10 @@ name: Build Container
 
 on:
   push:
-    branches:
-      - main
     paths:
       - container/build.Dockerfile
       - .github/workflows/create-build-container.yaml
   pull_request:
-    branches:
-      - main
     paths:
       - container/build.Dockerfile
       - .github/workflows/create-build-container.yaml
@@ -34,6 +30,6 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          push: true
+          push: github.ref == 'refs/heads/main'
           file: container/build.Dockerfile
           tags: ghcr.io/${{ github.repository }}/terra-tracker-sensor-zephyr:latest
