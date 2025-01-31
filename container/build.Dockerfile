@@ -38,8 +38,8 @@ RUN \
     ## Install Zephyr SDK
     cd /zephyr \
     && . .venv/bin/activate \
-    && pip install patool requests semver \
-    && west sdk install -t arm-zephyr-eabi
+    && pip install patool requests semver tqdm \
+    && west sdk install -b /usr/local -t arm-zephyr-eabi
 
 RUN \
     ## Install additional tools required during compilation
