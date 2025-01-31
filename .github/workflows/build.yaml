@@ -18,8 +18,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: CMake configure
+      - name: CMake Configure
         run: |
+          ## Need to activate zephyr environment
+          ##
+          ## In the container this is done in the entrypoint, but unfortunately
+          ## GitHub overrides the entrypoint script, therefore it has to be
+          ## done here explicitly
+          . /zephyr/.venv/bin/activate
+
+          ## When running within github the home dir will be changed, this
+          ## however means that the cmake packages, installed by
+          ## `zephyr sdk install`, command will not be found. Hence make a link
+          ## to current HOME dir such that they are found again.
+          ln -s /root/.cmake/ $HOME
+
+          ## Run cmake configure
+          ## NB: The duplication isn't a typo, if the configure step is done
+          ## only once, the build step afterwards will fail ;(
           cmake -B _build/release -G Ninja -D CMAKE_BUILD_TYPE=Release -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=release
           cmake -B _build/release -G Ninja -D CMAKE_BUILD_TYPE=Release -D BOARD=rpi_pico/rp2040/w -D FILE_SUFFIX=release
 
