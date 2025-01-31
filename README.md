@@ -1,4 +1,6 @@
 # Terra Tracker - Sensor
+[![Build Container](https://github.com/tiropp/terra-tracker-sensor/actions/workflows/create-build-container.yaml/badge.svg)](https://github.com/tiropp/terra-tracker-sensor/actions/workflows/create-build-container.yaml)
+[![Build](https://github.com/tiropp/terra-tracker-sensor/actions/workflows/build.yaml/badge.svg)](https://github.com/tiropp/terra-tracker-sensor/actions/workflows/build.yaml)
 
 Terra Tracker Sensor is the sensor part of the TTT (Tiropp's Terra Tracker) system. It will make the environment measurements and send the information to the data collector API. 
 
